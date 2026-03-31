@@ -1,0 +1,9 @@
+{
+    "scan_timeout": 30,
+    "max_threads": 10,
+    "port_range": "1-1000",
+    "enable_poc": true,
+    "scan_mode": "标准",
+    "enable_cve_check": true,
+    "aggressive_scan": false
+}

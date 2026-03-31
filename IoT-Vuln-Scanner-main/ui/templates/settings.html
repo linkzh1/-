@@ -1,0 +1,20 @@
+{% extends "sidebar.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1>Settings</h1>
+        <form action="/save_settings" method="post">
+            <div class="row">
+                <div class="six columns">
+                    <label for="setting1">Setting 1</label>
+                    <input class="u-full-width" type="text" placeholder="Setting 1" id="setting1" name="setting1">
+                </div>
+                <div class="six columns">
+                    <label for="setting2">Setting 2</label>
+                    <input class="u-full-width" type="text" placeholder="Setting 2" id="setting2" name="setting2">
+                </div>
+            </div>
+            <input class="button-primary" type="submit" value="Save Settings">
+        </form>
+    </div>
+{% endblock %}

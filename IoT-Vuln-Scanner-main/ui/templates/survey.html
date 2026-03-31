@@ -1,0 +1,125 @@
+{% extends "sidebar.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ title }}</h1>
+
+    <div class="survey-intro">
+        <p>感谢您使用 IoT 漏洞扫描器。{{ "使用前请花2分钟帮助我们了解您的背景。" if survey_type == 'pre' else "使用后请分享您的体验反馈。" }}</p>
+        <p><small>* 标记为必填项</small></p>
+    </div>
+
+    <form action="/submit_survey/{{ survey_type }}" method="post" id="surveyForm">
+        {% for question in questions %}
+        <div class="question-block" id="{{ question.id }}">
+            <h4>{{ question.text }}{% if question.required %} <span class="required">*</span>{% endif %}</h4>
+
+            {% if question.type == 'single' %}
+                <div class="options">
+                    {% for option in question.options %}
+                    <label class="option-label">
+                        <input type="radio" name="{{ question.id }}" value="{{ option }}"
+                               {% if question.required %}required{% endif %}>
+                        {{ option }}
+                    </label>
+                    {% endfor %}
+                </div>
+
+            {% elif question.type == 'multiple' %}
+                <div class="options">
+                    {% for option in question.options %}
+                    <label class="option-label">
+                        <input type="checkbox" name="{{ question.id }}[]" value="{{ option }}">
+                        {{ option }}
+                    </label>
+                    {% endfor %}
+                </div>
+
+            {% elif question.type == 'scale' %}
+                <div class="scale-rating">
+                    {% for i in range(1, 6) %}
+                    <label class="rating-label">
+                        <input type="radio" name="{{ question.id }}" value="{{ i }}" required>
+                        <span class="star">⭐</span>
+                    </label>
+                    {% endfor %}
+                    <span class="scale-hint">1星 = 非常不满意，5星 = 非常满意</span>
+                </div>
+
+            {% else %}
+                <input type="text" name="{{ question.id }}" class="text-input"
+                       placeholder="请输入您的回答" {% if question.required %}required{% endif %}>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">提交问卷</button>
+            {% if survey_type == 'pre' %}
+            <button type="button" class="btn-secondary" onclick="skipSurvey()">跳过此步骤</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<style>
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.question-block {
+    background: #f8f9fa;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+.required { color: #e74c3c; }
+.options { margin-top: 10px; }
+.option-label {
+    display: block;
+    padding: 8px;
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.option-label:hover { background: #e3f2fd; }
+.scale-rating { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.rating-label { cursor: pointer; font-size: 24px; }
+.rating-label input { display: none; }
+.rating-label:hover .star { transform: scale(1.2); }
+.text-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+.form-actions { margin-top: 30px; text-align: center; }
+.btn-primary {
+    background: #3498db;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+</style>
+
+<script>
+function skipSurvey() {
+    if (confirm('确定要跳过问卷调查吗？您的反馈对我们很重要。')) {
+        fetch('/survey/skip_pre', {method: 'POST'})
+            .then(() => window.location.href = '/');
+    }
+}
+</script>
+{% endblock %}

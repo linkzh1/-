@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT 安全扫描器 - 设备列表</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --purple: #8b5cf6;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --bg-color: #f3f4f6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--dark);
+        }
+
+        /* 顶部导航栏 */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 0.5rem;
+        }
+
+        /* 统计卡片 */
+        .stats-container {
+            margin-top: -2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+            border: none;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon.blue { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .stat-icon.orange { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .stat-icon.red { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .stat-icon.cyan { background: rgba(6, 182, 212, 0.1); color: var(--info); }
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .stat-icon.pink { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+        .stat-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .stat-sublabel {
+            font-size: 0.75rem;
+            color: var(--gray);
+            opacity: 0.8;
+        }
+
+        /* 流量图表区域 */
+        .traffic-chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .traffic-canvas {
+            width: 100%;
+            height: 200px;
+        }
+
+        /* 搜索栏 */
+        .search-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* 设备卡片 */
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .device-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+        .device-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .device-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+        }
+
+        .device-icon.router { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .device-icon.computer { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .device-icon.unknown { background: rgba(107, 114, 128, 0.1); color: var(--gray); }
+        .device-icon.camera { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
+        .device-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .device-type-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .device-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-scan {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-scan:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .device-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 扫描按钮旋转动画 */
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 其他设备提示 */
+        .other-devices-hint {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-check"></i>
+                IoT 安全扫描器
+            </a>
+            <button class="btn btn-light rounded-pill px-4" onclick="scanNetwork()">
+                <i class="bi bi-arrow-clockwise me-2"></i>重新扫描网络
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- 🆕 修改后的统计卡片 - 显示所有设备类型 -->
+        <div class="row stats-container g-3">
+            <!-- 总设备数 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="bi bi-hdd-network"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.total if stats else devices|length }}</div>
+                    <div class="stat-label">发现设备总数</div>
+                </div>
+            </div>
+
+            <!-- 路由器/网关 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="bi bi-router"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.router if stats else 0 }}</div>
+                    <div class="stat-label">路由器/网关</div>
+                </div>
+            </div>
+
+            <!-- 摄像头 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="bi bi-camera-video"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.camera if stats else 0 }}</div>
+                    <div class="stat-label">摄像头</div>
+                </div>
+            </div>
+
+            <!-- 智能音箱 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon pink">
+                        <i class="bi bi-speaker"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.speaker if stats else 0 }}</div>
+                    <div class="stat-label">智能音箱</div>
+                </div>
+            </div>
+
+            <!-- 手机/平板 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i class="bi bi-phone"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.phone if stats else 0 }}</div>
+                    <div class="stat-label">手机/平板</div>
+                </div>
+            </div>
+
+            <!-- 实时下载速度 -->
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="stat-card">
+                    <div class="stat-icon cyan">
+                        <i class="bi bi-arrow-down-circle"></i>
+                    </div>
+                    <div class="stat-value" id="downloadSpeed">--</div>
+                    <div class="stat-label">下载速度</div>
+                    <div class="stat-sublabel">Mbps (实时)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 如果有其他类型设备，显示提示 -->
+        {% if stats and stats.other > 0 %}
+        <div class="other-devices-hint">
+            <i class="bi bi-info-circle me-1"></i>
+            还有 {{ stats.other }} 个其他类型设备（计算机、未知设备等）
+        </div>
+        {% endif %}
+
+        <!-- 流量趋势图表 -->
+        <div class="traffic-chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-graph-up me-2 text-primary"></i>
+                网络流量趋势
+            </h5>
+            <canvas id="trafficChart" class="traffic-canvas"></canvas>
+        </div>
+
+        <!-- 搜索栏 -->
+        <div class="search-container position-relative">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索 IP 地址、MAC 地址或厂商名称...">
+        </div>
+
+        <!-- 设备卡片网格 -->
+        {% if devices %}
+        <div class="device-grid" id="deviceGrid">
+            {% for device in devices %}
+
+            {# 根据设备类型设置图标和样式 #}
+            {% set icon_class = 'unknown' %}
+            {% set icon = 'bi-question-circle' %}
+            {% if 'Router' in device.device_type or 'Gateway' in device.device_type or '路由器' in device.device_type %}
+                {% set icon_class = 'router' %}
+                {% set icon = 'bi-router' %}
+            {% elif 'Computer' in device.device_type or 'Server' in device.device_type or '计算机' in device.device_type %}
+                {% set icon_class = 'computer' %}
+                {% set icon = 'bi-pc-display' %}
+            {% elif 'Camera' in device.device_type or '摄像头' in device.device_type %}
+                {% set icon_class = 'camera' %}
+                {% set icon = 'bi-camera-video' %}
+            {% elif 'Speaker' in device.device_type or '音箱' in device.device_type %}
+                {% set icon = 'bi-speaker' %}
+            {% elif 'Phone' in device.device_type or '手机' in device.device_type %}
+                {% set icon = 'bi-phone' %}
+            {% endif %}
+
+            <div class="device-card device-item"
+                 data-ip="{{ device.ip }}"
+                 data-mac="{{ device.mac }}"
+                 data-vendor="{{ device.vendor }}">
+
+                <div class="device-header">
+                    <div class="device-icon {{ icon_class }}">
+                        <i class="bi {{ icon }}"></i>
+                    </div>
+                    <div class="device-status">
+                        <span class="status-dot"></span>
+                        在线
+                    </div>
+                </div>
+
+                <span class="device-type-badge">{{ device.device_type }}</span>
+
+                <div class="device-info">
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="bi bi-globe"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">IP 地址</div>
+                            <div class="info-value">{{ device.ip }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="bi bi-ethernet"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">MAC 地址</div>
+                            <div class="info-value">{{ device.mac }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">厂商</div>
+                            <div class="info-value" style="font-family: inherit;">
+                                {{ device.vendor if device.vendor != 'Unknown' else '未知厂商' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('device.device_detail', mac=device.mac) }}" class="btn-scan">
+                    <i class="bi bi-shield-search"></i>
+                    查看安全详情
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-wifi-off"></i>
+            <h4>未发现设备</h4>
+            <p class="text-muted">请确保您的设备已连接到网络，然后点击"重新扫描网络"</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 实时搜索功能
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const devices = document.querySelectorAll('.device-item');
+            let visibleCount = 0;
+
+            devices.forEach(device => {
+                const ip = device.getAttribute('data-ip').toLowerCase();
+                const mac = device.getAttribute('data-mac').toLowerCase();
+                const vendor = device.getAttribute('data-vendor').toLowerCase();
+
+                if (ip.includes(searchTerm) || mac.includes(searchTerm) || vendor.includes(searchTerm)) {
+                    device.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    device.style.display = 'none';
+                }
+            });
+        });
+
+        // 网络扫描功能
+        async function scanNetwork() {
+            const btn = document.querySelector('button[onclick="scanNetwork()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise spin me-2"></i>扫描中...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/scan/network', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    alert(`✅ ${data.message}`);
+                    location.reload();
+                } else {
+                    alert(`❌ 扫描失败: ${data.message}`);
+                }
+            } catch (error) {
+                alert(`❌ 请求失败: ${error.message}`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ========== 流量监控功能 ==========
+        let trafficHistory = {
+            labels: [],
+            download: [],
+            upload: []
+        };
+        const maxHistoryPoints = 20;
+
+        async function updateTraffic() {
+            try {
+                const response = await fetch('/api/traffic/current');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2);
+
+                    const now = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                    trafficHistory.labels.push(now);
+                    trafficHistory.download.push(data.download_mbps);
+                    trafficHistory.upload.push(data.upload_mbps || 0);
+
+                    if (trafficHistory.labels.length > maxHistoryPoints) {
+                        trafficHistory.labels.shift();
+                        trafficHistory.download.shift();
+                        trafficHistory.upload.shift();
+                    }
+
+                    drawTrafficChart();
+                }
+            } catch (error) {
+                console.error('获取流量数据失败:', error);
+                document.getElementById('downloadSpeed').textContent = '0.00';
+            }
+        }
+
+        function drawTrafficChart() {
+            const canvas = document.getElementById('trafficChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            ctx.clearRect(0, 0, width, height);
+
+            if (trafficHistory.labels.length < 2) return;
+
+            const padding = 40;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const maxValue = Math.max(...trafficHistory.download, ...trafficHistory.upload, 1) * 1.2;
+
+            // 网格线
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (chartHeight / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+
+            // 下载曲线
+            drawLine(ctx, trafficHistory.download, '#06b6d4', maxValue, width, height, padding, chartWidth, chartHeight);
+            // 上传曲线
+            drawLine(ctx, trafficHistory.upload, '#8b5cf6', maxValue, width, height, padding, chartWidth, chartHeight);
+        }
+
+        function drawLine(ctx, data, color, maxValue, width, height, padding, chartWidth, chartHeight) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            data.forEach((value, index) => {
+                const x = padding + (chartWidth / (maxHistoryPoints - 1)) * index;
+                const y = padding + chartHeight - (value / maxValue) * chartHeight;
+
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            data.forEach((value, index) => {
+                const x = padding + (chartWidth / (maxHistoryPoints - 1)) * index;
+                const y = padding + chartHeight - (value / maxValue) * chartHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        updateTraffic();
+        setInterval(updateTraffic, 30000);
+        window.addEventListener('resize', drawTrafficChart);
+    </script>
+</body>
+</html>

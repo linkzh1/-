@@ -1,0 +1,173 @@
+{
+    "Samsung_Smart_TV": {
+        "device_info": {
+            "ip": "192.168.0.10",
+            "mac": "00:14:22:01:23:45",
+            "device_type": "Smart TV",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.10",
+            "mac": "00:14:22:01:23:45",
+            "device_type": "Smart TV",
+            "scan_time": 1774833590.0199995,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Philips_Hue_Bulb": {
+        "device_info": {
+            "ip": "192.168.0.11",
+            "mac": "00:25:9c:cf:1c:ac",
+            "device_type": "Hue Bulb",
+            "open_ports": []
+        },
+        "scan_result": {
+            "ip": "192.168.0.11",
+            "mac": "00:25:9c:cf:1c:ac",
+            "device_type": "Hue Bulb",
+            "scan_time": 1774833590.0219991,
+            "vulnerabilities": [],
+            "open_ports": [],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Amazon_Echo": {
+        "device_info": {
+            "ip": "192.168.0.12",
+            "mac": "44:65:0d:56:cc:d3",
+            "device_type": "Echo",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.12",
+            "mac": "44:65:0d:56:cc:d3",
+            "device_type": "Echo",
+            "scan_time": 1774833779.4282038,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Nest_Thermostat": {
+        "device_info": {
+            "ip": "192.168.0.13",
+            "mac": "18:b4:30:25:7f:3d",
+            "device_type": "Thermostat",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.13",
+            "mac": "18:b4:30:25:7f:3d",
+            "device_type": "Thermostat",
+            "scan_time": 1774833779.432203,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Ring_Doorbell": {
+        "device_info": {
+            "ip": "192.168.0.14",
+            "mac": "1c:0b:d5:2a:bc:de",
+            "device_type": "Doorbell",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.14",
+            "mac": "1c:0b:d5:2a:bc:de",
+            "device_type": "Doorbell",
+            "scan_time": 1774833779.434203,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Netgear_Arlo_Camera": {
+        "device_info": {
+            "ip": "192.168.0.15",
+            "mac": "40:b8:37:5b:cf:fe",
+            "device_type": "Arlo Camera",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.15",
+            "mac": "40:b8:37:5b:cf:fe",
+            "device_type": "Arlo Camera",
+            "scan_time": 1774833779.436203,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    },
+    "Belkin_Wemo_Plug": {
+        "device_info": {
+            "ip": "192.168.0.16",
+            "mac": "94:10:3e:ac:df:ef",
+            "device_type": "Wemo Plug",
+            "open_ports": [
+                80
+            ]
+        },
+        "scan_result": {
+            "ip": "192.168.0.16",
+            "mac": "94:10:3e:ac:df:ef",
+            "device_type": "Wemo Plug",
+            "scan_time": 1774833779.437203,
+            "vulnerabilities": [],
+            "open_ports": [
+                80
+            ],
+            "auth_issues": [],
+            "protocol_issues": []
+        },
+        "vuln_count": 0,
+        "auth_issues_count": 0,
+        "protocol_issues_count": 0
+    }
+}

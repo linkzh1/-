@@ -1,0 +1,7 @@
+{
+    "enable_anonymization": true,
+    "mask_level": "full",
+    "retention_days": 30,
+    "auto_cleanup": true,
+    "consent_required": true
+}

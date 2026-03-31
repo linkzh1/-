@@ -1,0 +1,31 @@
+# Web框架
+Flask==2.3.3
+fastapi==0.103.1
+uvicorn==0.23.2
+python-multipart==0.0.6
+
+# 数据/网络
+scapy==2.5.0
+paramiko==3.3.1
+requests==2.31.0
+urllib3==2.0.4
+
+# 数据库
+sqlite3-utils==3.34
+
+# 数据处理
+pandas==2.0.3
+plotly==5.17.0
+
+# 前端/UI
+streamlit==1.27.0
+Jinja2==3.1.2
+
+# 工具
+pydantic==2.4.2
+python-dateutil==2.8.2
+PyYAML==6.0.1
+
+# 安全相关
+cryptography==41.0.4
+certifi==2023.7.22

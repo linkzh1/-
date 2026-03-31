@@ -1,0 +1,8 @@
+{
+    "enable_anonymization": true,
+    "mask_level": "partial",
+    "retention_days": 30,
+    "auto_cleanup": false,
+    "consent_required": true,
+    "last_updated": "2026-03-30"
+}

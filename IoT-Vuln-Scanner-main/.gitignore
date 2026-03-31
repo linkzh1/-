@@ -1,0 +1,12 @@
+env/
+.venv/
+all_devices_vulnerabilities.json
+tests/__pycache__/
+core/__pycache__/
+ui/__pycache__/
+
+
+data/iot_scanner.db
+data/devices.db
+data/history.db
+tests/arp_output.py

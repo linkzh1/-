@@ -1,0 +1,17 @@
+{% extends "sidebar.html" %}
+{% block content %}
+<div class="container" style="text-align: center; padding: 50px;">
+    <h1>欢迎使用 IoT 漏洞扫描器</h1>
+    <p>首次使用请完成简短调查，帮助我们改进产品。</p>
+    <a href="/survey/pre" class="btn-primary">开始问卷</a>
+    <button onclick="skipSurvey()" class="btn-secondary">跳过</button>
+</div>
+<script>
+function skipSurvey() {
+    if(confirm('确定跳过？')) {
+        fetch('/survey/skip_pre', {method: 'POST'})
+            .then(() => window.location.href = '/');
+    }
+}
+</script>
+{% endblock %}

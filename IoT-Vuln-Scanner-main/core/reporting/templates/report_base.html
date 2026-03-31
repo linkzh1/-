@@ -1,0 +1,234 @@
+<!-- core\reporting\templates\report_base.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>IoT安全扫描报告</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: "Noto Sans CJK SC", "SimHei", sans-serif;
+            font-size: 10pt;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #DC143C;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #DC143C;
+            font-size: 24pt;
+            margin: 0;
+        }
+        .meta-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 22%;
+        }
+        .stat-number {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #DC143C;
+        }
+        .severity-critical { color: #DC143C; font-weight: bold; }
+        .severity-high { color: #FF6347; font-weight: bold; }
+        .severity-medium { color: #FFA500; }
+        .severity-low { color: #FFD700; }
+
+        .device-section {
+            margin-top: 30px;
+            page-break-before: always;
+        }
+        .device-header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .vuln-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 9pt;
+        }
+        .vuln-table th {
+            background: #34495e;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+        .vuln-table td {
+            border-bottom: 1px solid #ddd;
+            padding: 8px;
+        }
+        .remediation {
+            background: #e8f4f8;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 封面页 -->
+<div class="header">
+    <h1>🏠 智能家居物联网安全评估报告</h1>
+    <p>生成时间：{{ generated_at }}</p>
+    <p>扫描范围：{{ scan_info.network_range }}</p>
+</div>
+
+<!-- 执行摘要 -->
+<div class="meta-info">
+    <h2>📊 执行摘要</h2>
+    <p><strong>扫描ID：</strong>{{ scan_info.get('scan_id', 'N/A') }}</p>
+    <p><strong>扫描时间：</strong>{{ scan_info.get('scan_time', 'N/A') }}</p>
+    <p><strong>风险评级：</strong>
+        {% if statistics.average_risk_score >= 7 %}
+            <span class="severity-critical">高危 ({{ statistics.average_risk_score }}/10)</span>
+        {% elif statistics.average_risk_score >= 4 %}
+            <span class="severity-high">中危 ({{ statistics.average_risk_score }}/10)</span>
+        {% else %}
+            <span class="severity-medium">低危 ({{ statistics.average_risk_score }}/10)</span>
+        {% endif %}
+    </p>
+</div>
+
+<!-- 统计概览 -->
+<div class="summary-box">
+    <div class="stat-card">
+        <div class="stat-number">{{ statistics.total_devices }}</div>
+        <div>发现设备</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: #DC143C">{{ statistics.total_vulnerabilities }}</div>
+        <div>漏洞总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: #27ae60">{{ statistics.compliant_devices }}</div>
+        <div>合规设备</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ "%.1f"|format(statistics.average_risk_score) }}</div>
+        <div>平均风险分</div>
+    </div>
+</div>
+
+<!-- 风险分布图表 -->
+{% if charts.severity_pie %}
+<div class="chart-container">
+    <h3>漏洞严重程度分布</h3>
+    <img src="data:image/png;base64,{{ charts.severity_pie }}" style="max-width: 400px;">
+</div>
+{% endif %}
+
+<!-- 详细发现 -->
+<h2>🔍 详细发现</h2>
+
+{% for device in devices %}
+<div class="device-section">
+    <div class="device-header">
+        <strong>设备 {{ loop.index }}:</strong> {{ device.ip }}
+        {% if device.mac %}({{ device.mac }}){% endif %}
+        <span style="float: right;">厂商: {{ device.vendor or 'Unknown' }}</span>
+    </div>
+
+    <p><strong>设备类型：</strong>{{ device.type or '未识别' }}</p>
+    <p><strong>开放端口：</strong>{{ device.ports|join(', ') if device.ports else '无' }}</p>
+
+    {% if device.vulns %}
+    <h4>发现漏洞 ({{ device.vulns|length }})</h4>
+    <table class="vuln-table">
+        <thead>
+            <tr>
+                <th width="12%">严重度</th>
+                <th width="20%">CVE编号</th>
+                <th width="35%">漏洞标题</th>
+                <th width="33%">修复建议</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vuln in device.vulns %}
+            <tr>
+                <td class="severity-{{ vuln.severity|lower }}">{{ vuln.severity }}</td>
+                <td>{{ vuln.cve }}</td>
+                <td>{{ vuln.title }}</td>
+                <td>{{ vuln.remediation or '请联系厂商升级固件' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="remediation" style="border-color: #27ae60; background: #d4edda;">
+        ✅ 未发现已知漏洞，设备状态良好
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- 合规建议 -->
+<div class="device-section">
+    <h2>🛡️ 安全建议</h2>
+    <div class="remediation">
+        <h4>立即处置（高危漏洞）</h4>
+        <ul>
+            <li>对标记为 Critical/High 的设备立即断开互联网连接</li>
+            <li>修改所有设备的默认管理员密码</li>
+            <li>禁用不必要的远程访问服务（Telnet/SSH/UPnP）</li>
+        </ul>
+    </div>
+    <div class="remediation">
+        <h4>短期加固（1-7天）</h4>
+        <ul>
+            <li>为IoT设备划分独立VLAN，隔离关键业务网络</li>
+            <li>启用设备自动更新功能，确保固件为最新版本</li>
+            <li>配置网络层防火墙规则，限制设备对外连接</li>
+        </ul>
+    </div>
+    <div class="remediation">
+        <h4>长期策略</h4>
+        <ul>
+            <li>建立IoT设备资产清单，定期执行漏洞扫描</li>
+            <li>采购前审查设备安全认证（如IoT安全标签）</li>
+            <li>部署网络监控系统，检测异常流量</li>
+        </ul>
+    </div>
+</div>
+
+<div style="margin-top: 50px; font-size: 8pt; color: #666; text-align: center;">
+    <p>本报告由 IoT Vulnerability Scanner 自动生成，仅供参考。请结合实际情况评估风险。</p>
+    <p>报告包含敏感信息，请妥善保管。</p>
+</div>
+
+</body>
+</html>

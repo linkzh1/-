@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>手动漏洞扫描测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f7fa; padding: 2rem; }
+        .scan-card { background: white; border-radius: 15px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .result-box { background: #1e1e1e; color: #00ff00; font-family: monospace; padding: 1rem; border-radius: 8px; height: 400px; overflow-y: auto; margin-top: 1rem; }
+        .vuln-found { color: #ff4444; font-weight: bold; }
+        .vuln-info { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="scan-card">
+                    <h4 class="mb-4"><i class="bi bi-bug-fill text-danger"></i> 手动漏洞扫描</h4>
+
+                    <div class="mb-3">
+                        <label class="form-label">目标 IP 地址</label>
+                        <input type="text" class="form-control" id="targetIp" value="127.0.0.1" placeholder="例如: 192.168.1.100">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">开放端口（逗号分隔）</label>
+                        <input type="text" class="form-control" id="targetPorts" value="8080,2323,8000,80" placeholder="例如: 80,8080,23">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">设备类型</label>
+                        <select class="form-select" id="deviceType">
+                            <option value="router_gateway">路由器/网关</option>
+                            <option value="camera">摄像头</option>
+                            <option value="smart_plug">智能插座</option>
+                            <option value="unknown">未知</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-danger w-100" onclick="startScan()">
+                        <i class="bi bi-play-fill"></i> 开始扫描
+                    </button>
+
+                    <hr class="my-4">
+
+                    <h6>快速测试目标：</h6>
+                    <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="setTarget('127.0.0.1', '8080,2323,8000', 'router_gateway')">
+                        本地脆弱容器 (127.0.0.1)
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="setTarget('192.168.31.1', '80,8080', 'router_gateway')">
+                        小米路由器 (192.168.31.1)
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="scan-card">
+                    <h5>扫描日志</h5>
+                    <div class="result-box" id="logBox">
+                        <div class="text-muted">等待扫描开始...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setTarget(ip, ports, type) {
+            document.getElementById('targetIp').value = ip;
+            document.getElementById('targetPorts').value = ports;
+            document.getElementById('deviceType').value = type;
+        }
+
+        function startScan() {
+            const ip = document.getElementById('targetIp').value;
+            const ports = document.getElementById('targetPorts').value.split(',').map(p => parseInt(p.trim()));
+            const type = document.getElementById('deviceType').value;
+
+            const logBox = document.getElementById('logBox');
+            logBox.innerHTML = `<div class="vuln-info">[+] 开始扫描 ${ip}...</div>`;
+
+            fetch('/api/scan/manual', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    ip: ip,
+                    ports: ports,
+                    device_type: type,
+                    mac: '00:00:00:00:00:00'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                logBox.innerHTML += `<div class="vuln-info">[+] ${data.message}</div>`;
+                logBox.innerHTML += `<div class="text-warning">[*] 扫描在后台运行，查看终端日志获取详细结果</div>`;
+            })
+            .catch(err => {
+                logBox.innerHTML += `<div class="vuln-found">[-] 错误: ${err}</div>`;
+            });
+        }
+    </script>
+</body>
+</html>

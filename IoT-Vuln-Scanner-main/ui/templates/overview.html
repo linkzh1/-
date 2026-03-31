@@ -1,0 +1,14 @@
+{% extends "sidebar.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1>Overview</h1>
+        <h2>Global Traffic Statistics</h2>
+        <table class="u-full-width">
+            <tr><th>Total Packets</th><td>{{ stats.total_packets }}</td></tr>
+            <tr><th>Total Bytes</th><td>{{ stats.total_bytes }}</td></tr>
+            <tr><th>Rate (PPS)</th><td>{{ stats.rate_pps }}</td></tr>
+            <tr><th>Rate (BPS)</th><td>{{ stats.rate_bps }}</td></tr>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "sidebar.html" %}
+
+{% block content %}
+<div class="container" style="text-align: center; padding: 50px;">
+    <h1>🎉 {{ message }}</h1>
+    
+    <div class="actions" style="margin-top: 30px;">
+        {% if survey_type == 'pre' %}
+        <a href="/" class="btn-primary">开始使用扫描器</a>
+        {% else %}
+        <a href="/" class="btn-primary">返回设备列表</a>
+        <a href="/survey/pre" class="btn-secondary">查看使用前调查</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

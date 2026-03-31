@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备详情 - {{ device.ip }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 漏洞严重程度样式 */
+        .vuln-critical { background-color: #dc3545; color: white; }
+        .vuln-high { background-color: #fd7e14; color: white; }
+        .vuln-medium { background-color: #ffc107; color: black; }
+        .vuln-low { background-color: #6c757d; color: white; }
+
+        /* 风险评分样式 */
+        .risk-score {
+            font-size: 3rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .risk-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        /* 扫描按钮区域 */
+        .scan-controls {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* 漏洞计数器 */
+        .vuln-counter {
+            font-size: 1.1rem;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        /* 扫描状态 */
+        .scan-status-badge {
+            font-size: 0.9rem;
+            padding: 8px 15px;
+        }
+
+        /* 手风琴样式优化 */
+        .accordion-button {
+            padding: 15px 20px;
+        }
+        .accordion-body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        /* 修复建议框 */
+        .fix-box {
+            border-left: 4px solid #198754;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        /* 隐藏加载动画 */
+        .scan-loading {
+            display: none;
+        }
+
+        /* PDF按钮样式 - 启用状态 */
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-pdf:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+        }
+
+        /* PDF按钮禁用状态 */
+        .btn-pdf:disabled,
+        .btn-pdf-disabled {
+            background: #6c757d !important;
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            pointer-events: none;
+        }
+
+        .btn-pdf svg {
+            margin-right: 6px;
+        }
+
+        /* 开放端口样式 */
+        .open-ports-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
+        }
+        .port-badge {
+            font-size: 0.9rem;
+            padding: 8px 14px;
+            margin: 4px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0dcaf0 0%, #0baccc 100%);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(13, 202, 240, 0.3);
+            transition: all 0.2s;
+            border: none;
+        }
+        .port-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(13, 202, 240, 0.4);
+        }
+        .port-number {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .port-service {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .ports-section-title {
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .no-ports {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .port-protocol {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-right: 4px;
+        }
+        .port-source-tag {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-left: auto;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" style="padding: 30px;">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>🔍 设备详情</h2>
+            <a href="{{ url_for('device.index') }}" class="btn btn-secondary">← 返回设备列表</a>
+        </div>
+
+        <!-- 设备基本信息卡片 -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0">📱 基本信息</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless mb-0">
+                            <tr>
+                                <td width="120" class="text-muted"><strong>IP地址</strong></td>
+                                <td class="fs-5">{{ device.ip }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><strong>MAC地址</strong></td>
+                                <td><code class="fs-6">{{ device.mac }}</code></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless mb-0">
+                            <tr>
+                                <td width="120" class="text-muted"><strong>厂商</strong></td>
+                                <td>{{ device.vendor }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted"><strong>设备类型</strong></td>
+                                <td><span class="badge bg-info fs-6">{{ device.device_type or '未知' }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 主动漏洞扫描区域（核心功能） ========== -->
+        <div class="card mb-4 shadow border-danger">
+            <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">🛡️ 主动漏洞扫描</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- PDF下载按钮 - 初始禁用，扫描后启用 -->
+                    <button id="pdfDownloadBtn" class="btn btn-light btn-sm btn-pdf btn-pdf-disabled text-white" disabled
+                       title="请先进行漏洞扫描">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: text-bottom;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        📥 下载PDF报告
+                    </button>
+                    <span id="scanStatus" class="badge bg-light text-dark scan-status-badge">未扫描</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- 扫描控制区域 -->
+                <div class="scan-controls">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <button class="btn btn-danger btn-lg w-100" onclick="startVulnScan('{{ device.ip }}', '{{ device.mac }}')" id="scanBtn">
+                                <span class="spinner-border spinner-border-sm scan-loading me-2" id="scanSpinner"></span>
+                                <span id="scanBtnText">🔍 开始漏洞扫描</span>
+                            </button>
+                        </div>
+                        <div class="col-md-4 text-center">
+                        </div>
+                        <div class="col-md-4 text-muted text-end">
+                            <small>检测：弱口令、未授权访问、协议漏洞</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 扫描进度提示 -->
+                <div id="scanAlert" class="alert d-none mb-3"></div>
+
+                <!-- 扫描结果概览 -->
+                <div id="scanSummary" style="display: none;">
+                    <div class="row align-items-start">
+                        <!-- 风险评分 -->
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="card border-2 h-100">
+                                <div class="card-body py-4 d-flex flex-column justify-content-center">
+                                    <div class="risk-score" id="riskScore">0</div>
+                                    <div class="risk-label">风险评分 (0-10)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 漏洞统计和开放端口 -->
+                        <div class="col-md-9">
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge vuln-critical vuln-counter" id="criticalCount">严重: 0</span>
+                                <span class="badge vuln-high vuln-counter" id="highCount">高危: 0</span>
+                                <span class="badge vuln-medium vuln-counter" id="mediumCount">中危: 0</span>
+                                <span class="badge vuln-low vuln-counter" id="lowCount">低危: 0</span>
+                            </div>
+                            <div class="alert alert-light border mb-3">
+                                <p id="scanSummaryText" class="mb-1 text-dark"></p>
+                                <small class="text-muted">
+                                    扫描时间: <span id="scanTime"></span>
+                                </small>
+                            </div>
+
+                            <!-- 开放端口显示区域 -->
+                            <div class="open-ports-container">
+                                <div class="ports-section-title">
+                                    <span>🔓 开放的端口</span>
+                                    <span class="badge bg-info" id="openPortsCount">0</span>
+                                    <small id="portsSource" class="port-source-tag">加载中...</small>
+                                </div>
+                                <div id="openPortsList" class="d-flex flex-wrap">
+                                    <!-- 动态填充端口标签 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 漏洞详情列表 -->
+                <div id="vulnList" class="mt-4" style="display: none;">
+                    <h5 class="mb-3 border-bottom pb-2">🚨 发现的漏洞详情</h5>
+                    <div class="accordion" id="vulnAccordion">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 从后端模板获取设备初始端口数据（使用 default 过滤器避免 undefined 错误）
+        const initialDevicePorts = {{ device.open_ports | default([]) | tojson | safe }};
+        const currentIP = '{{ device.ip }}';
+        const currentMAC = '{{ device.mac }}';
+
+        // 常见端口服务映射
+        const commonPorts = {
+            20: 'FTP-DATA', 21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP',
+            53: 'DNS', 80: 'HTTP', 110: 'POP3', 139: 'NetBIOS', 143: 'IMAP',
+            443: 'HTTPS', 445: 'SMB', 3306: 'MySQL', 3389: 'RDP', 5432: 'PostgreSQL',
+            5900: 'VNC', 6379: 'Redis', 8080: 'HTTP-Proxy', 8443: 'HTTPS-Alt',
+            2323: 'Telnet-Alt', 8000: 'HTTP-Alt', 8888: 'HTTP-Alt', 1883: 'MQTT'
+        };
+
+        // 页面加载时显示初始端口数据
+        window.onload = function() {
+            if (initialDevicePorts && initialDevicePorts.length > 0) {
+                console.log('从设备数据加载端口:', initialDevicePorts);
+            }
+        };
+
+        function startVulnScan(ip, mac) {
+            document.getElementById('scanBtn').disabled = true;
+            document.getElementById('scanSpinner').classList.remove('scan-loading');
+            document.getElementById('scanSpinner').style.display = 'inline-block';
+            document.getElementById('scanBtnText').textContent = '扫描中...';
+            document.getElementById('scanStatus').textContent = '扫描中';
+            document.getElementById('scanStatus').className = 'badge bg-warning text-dark scan-status-badge';
+
+            document.getElementById('scanSummary').style.display = 'none';
+            document.getElementById('vulnList').style.display = 'none';
+
+            // 使用原来的 API 路径
+            fetch('/api/scan/manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ip: ip,
+                    mac: mac,
+                    ports: [80, 8080, 23, 2323, 8000, 1883],
+                    device_type: '{{ device.device_type }}',
+                    manufacturer: '{{ device.vendor }}'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('扫描返回数据:', data);
+                if (data.status === 'success') {
+                    displayScanResults(data.result);
+                    showAlert('success', `扫描完成！发现 ${data.result.vuln_count || 0} 个漏洞，风险评分: ${data.result.risk_score || 0}/10`);
+                    enablePdfDownload();
+                } else {
+                    showAlert('danger', '扫描失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                showAlert('danger', '网络错误: ' + error.message);
+                console.error('扫描请求错误:', error);
+            })
+            .finally(() => {
+                document.getElementById('scanBtn').disabled = false;
+                document.getElementById('scanSpinner').style.display = 'none';
+                document.getElementById('scanBtnText').textContent = '🔍 重新扫描';
+                document.getElementById('scanStatus').textContent = '扫描完成';
+                document.getElementById('scanStatus').className = 'badge bg-success scan-status-badge';
+            });
+        }
+
+        // 启用PDF下载按钮
+        function enablePdfDownload() {
+            const btn = document.getElementById('pdfDownloadBtn');
+            if (btn && btn.tagName === 'BUTTON') {
+                const newBtn = document.createElement('a');
+                newBtn.id = 'pdfDownloadBtn';
+                newBtn.href = "/api/report/pdf/" + currentMAC;
+                newBtn.className = 'btn btn-light btn-sm btn-pdf text-white';
+                newBtn.download = "设备安全报告_" + currentIP + ".pdf";
+                newBtn.title = "下载PDF安全报告";
+                newBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: text-bottom;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    📥 下载PDF报告
+                `;
+                btn.parentNode.replaceChild(newBtn, btn);
+            }
+        }
+
+        function displayScanResults(data) {
+            document.getElementById('scanSummary').style.display = 'block';
+
+            // 风险评分
+            const riskScore = data.risk_score || 0;
+            document.getElementById('riskScore').textContent = riskScore;
+
+            const scoreEl = document.getElementById('riskScore');
+            if (riskScore >= 7) scoreEl.className = 'risk-score text-danger';
+            else if (riskScore >= 4) scoreEl.className = 'risk-score text-warning';
+            else scoreEl.className = 'risk-score text-success';
+
+            // 漏洞统计
+            let critical = 0, high = 0, medium = 0, low = 0;
+            const vulnerabilities = data.vulnerabilities || [];
+
+            vulnerabilities.forEach(v => {
+                const sev = (v.severity || '').toUpperCase();
+                if (sev === 'CRITICAL') critical++;
+                else if (sev === 'HIGH') high++;
+                else if (sev === 'MEDIUM') medium++;
+                else low++;
+            });
+
+            document.getElementById('criticalCount').textContent = '严重: ' + critical;
+            document.getElementById('highCount').textContent = '高危: ' + high;
+            document.getElementById('mediumCount').textContent = '中危: ' + medium;
+            document.getElementById('lowCount').textContent = '低危: ' + low;
+
+            document.getElementById('scanSummaryText').textContent = `发现 ${data.vuln_count || 0} 个安全问题`;
+            document.getElementById('scanTime').textContent = new Date().toLocaleString();
+
+            // 显示开放端口：优先使用扫描结果，否则使用设备初始数据
+            const scanPorts = data.open_ports || [];
+            if (scanPorts.length > 0) {
+                displayOpenPorts(scanPorts, '扫描发现');
+            } else if (initialDevicePorts.length > 0) {
+                displayOpenPorts(initialDevicePorts, '设备已知');
+            } else {
+                displayOpenPorts([], '无数据');
+            }
+
+            // 显示漏洞详情
+            if (vulnerabilities.length > 0) {
+                displayVulnerabilityList(vulnerabilities);
+            }
+        }
+
+        function displayOpenPorts(ports, source) {
+            const portsList = document.getElementById('openPortsList');
+            const portsCount = document.getElementById('openPortsCount');
+            const sourceEl = document.getElementById('portsSource');
+
+            portsList.innerHTML = '';
+            portsCount.textContent = ports.length;
+            sourceEl.textContent = source ? `(${source})` : '';
+
+            if (ports.length === 0) {
+                portsList.innerHTML = '<span class="no-ports">未发现开放端口</span>';
+                return;
+            }
+
+            // 标准化端口数据并显示
+            ports.forEach(port => {
+                let portNum, protocol, service;
+
+                if (typeof port === 'object' && port !== null) {
+                    portNum = port.port || port.port_number || 0;
+                    protocol = port.protocol || port.proto || 'TCP';
+                    service = port.service || port.name || commonPorts[portNum] || 'Unknown';
+                } else {
+                    portNum = port;
+                    protocol = 'TCP';
+                    service = commonPorts[port] || 'Unknown';
+                }
+
+                if (portNum === 0) return;
+
+                const badge = document.createElement('span');
+                badge.className = 'port-badge';
+                badge.title = `协议: ${protocol}, 服务: ${service}`;
+                badge.innerHTML = `
+                    <span class="port-protocol">${protocol}</span>
+                    <span class="port-number">${portNum}</span>
+                    <span class="port-service">${service}</span>
+                `;
+                portsList.appendChild(badge);
+            });
+        }
+
+        function displayVulnerabilityList(vulnerabilities) {
+            const accordion = document.getElementById('vulnAccordion');
+            accordion.innerHTML = '';
+
+            vulnerabilities.forEach((vuln, index) => {
+                const severityClass = {
+                    'CRITICAL': 'vuln-critical',
+                    'HIGH': 'vuln-high',
+                    'MEDIUM': 'vuln-medium',
+                    'LOW': 'vuln-low'
+                }[vuln.severity] || 'vuln-low';
+
+                const item = document.createElement('div');
+                item.className = 'accordion-item mb-2';
+                item.innerHTML = `
+                    <h2 class="accordion-header" id="heading${index}">
+                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapse${index}">
+                            <span class="badge ${severityClass} me-3 vuln-counter">${vuln.severity}</span>
+                            <strong>${vuln.type || '未知漏洞'}</strong>
+                        </button>
+                    </h2>
+                    <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                         data-bs-parent="#vulnAccordion">
+                        <div class="accordion-body">
+                            <p><strong>描述:</strong> ${vuln.description || '无'}</p>
+                            <p><strong>证据:</strong> <code class="bg-light px-2 py-1 rounded">${vuln.proof || 'N/A'}</code></p>
+                            ${vuln.username ? `<p><strong>用户名:</strong> <span class="text-danger">${vuln.username}</span></p>` : ''}
+                            ${vuln.password ? `<p><strong>密码:</strong> <span class="text-danger font-monospace">${vuln.password}</span></p>` : ''}
+                            <div class="fix-box bg-white rounded">
+                                <strong class="text-success">🔧 修复建议:</strong><br>
+                                ${vuln.fix || '请联系厂商获取安全更新'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                accordion.appendChild(item);
+            });
+
+            document.getElementById('vulnList').style.display = 'block';
+        }
+
+        function showAlert(type, message) {
+            const alert = document.getElementById('scanAlert');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            alert.classList.remove('d-none');
+
+            setTimeout(() => {
+                alert.classList.add('d-none');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

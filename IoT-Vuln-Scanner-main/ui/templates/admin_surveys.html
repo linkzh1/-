@@ -1,0 +1,350 @@
+{% extends "sidebar.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>📊 问卷数据管理后台</h2>
+            <p class="text-muted">查看、分析和导出用户问卷反馈数据</p>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-uppercase">总提交数</h6>
+                            <h2 class="mb-0">{{ total }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-list fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-uppercase">使用前调查</h6>
+                            <h2 class="mb-0">{{ stats.get('questions', {})|length if stats else 0 }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-plus fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-uppercase">使用后反馈</h6>
+                            <h2 class="mb-0">{{ stats.get('total', 0) }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-comments fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-uppercase">今日提交</h6>
+                            <h2 class="mb-0">{{ trend_data[-1]['count'] if trend_data else 0 }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-day fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="row mb-4">
+        <!-- 提交趋势图 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 最近7天提交趋势</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="trendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 评分统计 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">⭐ 平均评分统计</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats and stats.get('questions') %}
+                        {% for q_key, q_stat in stats['questions'].items() %}
+                            {% if q_stat.type == 'scale' %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ q_key }}</span>
+                                    <span class="text-primary font-weight-bold">{{ q_stat.avg }} ⭐</span>
+                                </div>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" role="progressbar"
+                                         style="width: {{ (q_stat.avg / 5 * 100)|int }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ q_stat.count }} 人评分</small>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">暂无评分数据</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选和导出工具栏 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="/admin/surveys" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">问卷类型</label>
+                    <select name="type" class="form-select">
+                        <option value="all" {% if filter_type == 'all' %}selected{% endif %}>全部</option>
+                        <option value="pre" {% if filter_type == 'pre' %}selected{% endif %}>使用前调查</option>
+                        <option value="post" {% if filter_type == 'post' %}selected{% endif %}>使用后反馈</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">时间范围</label>
+                    <select name="date" class="form-select">
+                        <option value="7" {% if date_range == '7' %}selected{% endif %}>最近7天</option>
+                        <option value="30" {% if date_range == '30' %}selected{% endif %}>最近30天</option>
+                        <option value="90" {% if date_range == '90' %}selected{% endif %}>最近3个月</option>
+                        <option value="all" {% if date_range == 'all' %}selected{% endif %}>全部时间</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">关键词搜索</label>
+                    <input type="text" name="keyword" class="form-control"
+                           placeholder="搜索答案内容..." value="{{ keyword }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        🔍 筛选
+                    </button>
+                </div>
+            </form>
+
+            <hr>
+
+            <!-- 导出按钮组 -->
+            <div class="btn-group" role="group">
+                <a href="/admin/surveys/export/json" class="btn btn-outline-secondary">
+                    📄 导出 JSON
+                </a>
+                <a href="/admin/surveys/export/csv" class="btn btn-outline-secondary">
+                    📊 导出 CSV
+                </a>
+                <a href="/admin/surveys/export/excel" class="btn btn-outline-success">
+                    📈 导出 Excel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📝 问卷明细 (共 {{ total }} 条)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="5%">ID</th>
+                            <th width="10%">类型</th>
+                            <th width="15%">提交时间</th>
+                            <th width="60%">答案摘要</th>
+                            <th width="10%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for survey in surveys %}
+                        <tr>
+                            <td>{{ survey.id }}</td>
+                            <td>
+                                {% if survey.type == 'pre' %}
+                                <span class="badge bg-info">🆕 使用前</span>
+                                {% else %}
+                                <span class="badge bg-success">💬 使用后</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ survey.time }}</td>
+                            <td>
+                                {% set preview = [] %}
+                                {% for key, value in survey.responses.items() %}
+                                    {% if preview|length < 3 %}
+                                        {% set val_str = value|join(', ') if value is iterable and value is not string else value %}
+                                        {% if val_str|length > 30 %}
+                                            {% set val_str = val_str[:30] + '...' %}
+                                        {% endif %}
+                                        {% set _ = preview.append('<b>' + key + '</b>: ' + val_str) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ preview|join(' | ') | safe }}
+                                {% if survey.responses|length > 3 %}
+                                <span class="text-muted">等 {{ survey.responses|length }} 项...</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="showDetail({{ survey.id }})">
+                                    详情
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSurvey({{ survey.id }})">
+                                    删除
+                                </button>
+                            </td>
+                        </tr>
+                        <tr id="detail-row-{{ survey.id }}" style="display:none;">
+                            <td colspan="5" class="bg-light">
+                                <div class="p-3">
+                                    <h6>完整答案：</h6>
+                                    <pre class="bg-white p-3 rounded border">{{ survey.responses | tojson(indent=2) }}</pre>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据分析面板（折叠） -->
+    {% if stats and stats.get('questions') %}
+    <div class="card mt-4">
+        <div class="card-header" style="cursor:pointer;" onclick="toggleAnalysis()">
+            <h5 class="mb-0">📊 详细数据分析 ▼</h5>
+        </div>
+        <div class="card-body" id="analysisPanel" style="display:none;">
+            {% for q_key, q_stat in stats['questions'].items() %}
+            <div class="mb-4 border-bottom pb-3">
+                <h6 class="font-weight-bold">{{ q_key }}</h6>
+
+                {% if q_stat.type == 'scale' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>平均评分：<span class="h4 text-warning">{{ q_stat.avg }}</span> / 5.0</p>
+                            <p>评分分布：</p>
+                            <ul class="list-unstyled">
+                                {% for star, count in q_stat.distribution.items()|sort %}
+                                <li>
+                                    {{ star }}⭐:
+                                    <div class="progress d-inline-block" style="width: 100px; height: 10px;">
+                                        <div class="progress-bar bg-warning"
+                                             style="width: {{ (count / q_stat.count * 100)|int }}%"></div>
+                                    </div>
+                                    {{ count }}人 ({{ (count / q_stat.count * 100)|int }}%)
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <p>Top 选项：</p>
+                    <ul>
+                        {% for option, count in q_stat.top_options %}
+                        <li>
+                            {{ option }}:
+                            <span class="badge bg-secondary">{{ count }}</span>
+                            ({{ (count / q_stat.count * 100)|int }}%)
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="text-muted">共 {{ q_stat.unique_count }} 个不同答案</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 引入 Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 趋势图
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+const trendChart = new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trend_data|map(attribute='date')|list|tojson }},
+        datasets: [{
+            label: '每日提交数',
+            data: {{ trend_data|map(attribute='count')|list|tojson }},
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// 显示详情
+function showDetail(id) {
+    const row = document.getElementById('detail-row-' + id);
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// 删除问卷
+function deleteSurvey(id) {
+    if (confirm('确定要删除这条问卷记录吗？此操作不可恢复。')) {
+        fetch('/admin/surveys/delete/' + id, {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('删除失败');
+            }
+        });
+    }
+}
+
+// 切换分析面板
+function toggleAnalysis() {
+    const panel = document.getElementById('analysisPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
